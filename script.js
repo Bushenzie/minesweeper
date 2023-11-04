@@ -1,33 +1,6 @@
-import { randomNum } from "./utils.js";
 
-//TODO Overall refactor ,but hey it works :)
-//TODO Fully test neigbours functionality -> calculating row/column was really funky
-//TODO Always start on island! DONE!
-//TODO Fix click on flag block
-//TODO Sometimes it switches into other GAME_STATE (maybe) and the Game is not playable until reset
-
-
-//DOM
-const selector = document.querySelector("#select-board");
-const resetBtn = document.querySelector("#reset-board")
-selector.addEventListener("change",handleSelectChange)
-resetBtn.addEventListener("click",handleResetClick);
-
-//default settings
-let settings = {
-    columns: 16,
-    rows: 16,
-    mines: 40,
-    block_size: 2
-}
-
-//VARIABLES
-const GAME_STATES = ["playing","lose","win"]
-let board = [];
-let isFirstClick= true;
-let currentState;
-let blocksRemaining;
-let flagsRemaining;
+//TODO Overall refactor
+//TODO Make "win screen" + implement blockRemaining!
 
 class Block {
     constructor(id) {
@@ -39,8 +12,28 @@ class Block {
     }
 }
 
-//GAMEPLAY FNs
+//VARIABLES
+const GAME_STATES = ["playing","lose","win"]
+let settings = {
+    rows: null,
+    columns: null,
+    mines: null
+}
+let board = [];
+let isFirstClick= true;
+let currentState;
+let flagsRemaining;
+let blocksRemaining; //implement it
+
+//DOM
+const selector = document.querySelector("#select-board");
+const resetBtn = document.querySelector("#reset-board");
+selector.addEventListener("change",handleSelectChange)
+resetBtn.addEventListener("click",handleResetClick);
+
+//Function to create board
 function createBoard() {
+    //Loops to make 2D Array of blocks
     let currentId = 0;
     for(let r = 0; r < settings.rows; r++) {
         board[r] = [];
@@ -53,22 +46,21 @@ function createBoard() {
     }
 }
 
+//Function to setup mines on board
 function setMines(excluded){
     let currentMineCount = 0;
+
+    //runs until we have enough mines
     while(currentMineCount < settings.mines) {
 
         const row = randomNum(0,settings.rows-1);
         const column = randomNum(0,settings.columns-1);
-        
         const block = board[row][column];
 
-        if(excluded) {
-            console.log(excluded)
-            if(excluded.includes(block.id)) continue;
-        }
-        //const neighbours = [...Object.values(getNeighbours(clickedBlockId))];
-        // if(isFirstPick && (clickedBlockId === block.id || neighbours.includes(block))) continue;
+        //Check for excluded blocks
+        if(excluded && excluded.includes(block.id)) continue;
 
+        //Only place the bomb if the block doesnt have one
         if(!block.isMine) {
             block.isMine = true;
             currentMineCount++;
@@ -77,10 +69,10 @@ function setMines(excluded){
     }
 }
 
+//Function to get all the surrounding blocks
 function getNeighbours(blockId) {
     const row = Math.floor(blockId / settings.columns);
     const column = Math.floor(blockId % settings.columns);
-
 
     const neighbours = {
         north_west: board[row-1]?.[column-1],
@@ -96,6 +88,7 @@ function getNeighbours(blockId) {
     return neighbours;
 }
 
+//Function to get the mine count
 function getMineCount(neighbours) {
     let mineCount = 0;
     for(let block of Object.values(neighbours)) {
@@ -128,31 +121,33 @@ function checkForIsland(id) {
         return alreadyVisitedArr;
     }
 
-    //Invoke check with first ID and empty visited
     let result = check(id,[])
     return result;
 }
 
-//UTILS FNs
 
 //DOM CREATING FNs
+
+//Function to create HTML Block /w all the settings,classes,events etc...
 function createBlockUI(block) {
     let block_element;
     block_element = document.createElement("div");
     block_element.classList.add("block");
     block_element.addEventListener("click",(event) => handleBlockLeftClick(event,block))
     block_element.addEventListener("contextmenu",(event) => handleBlockRightClick(event,block))
-    block_element.id = block.id;
     block.element = block_element;
 }
 
+
+//Function to create HTML Board div /w all the settings based on board;
 function createBoardUI() {
     let board_element;
     board_element = document.createElement("div");
     board_element.classList.add("board");
-    board_element.setAttribute("style",`grid-template-columns: repeat(${settings.columns}, ${settings.block_size}rem); grid-template-rows: repeat(${settings.rows}, ${settings.block_size}rem)`);
+    board_element.setAttribute("style",`grid-template-columns: repeat(${settings.columns}, 1.75vw); grid-template-rows: repeat(${settings.rows}, 1.75vw)`);
     document.body.appendChild(board_element);
 
+    //add all blocks to board HTML container
     board.forEach(row => {
         row.forEach(block => {
             board_element.appendChild(block.element);
@@ -163,55 +158,42 @@ function createBoardUI() {
 //EVENT FNs
 function handleBlockLeftClick(event,block) {
 
+    //Check if the user has clicked on block for the first time (if true , set mines so user always starts on island)
     if(isFirstClick) {
         const neighbours = [...Object.values(getNeighbours(block.id)).map(block => block?.id),block.id];
         setMines(neighbours);
         isFirstClick = false;
     }
+
     //Check if game state is still "playing"
-    if(currentState === GAME_STATES[0]) {
+    if(currentState === GAME_STATES[0] && !block.isPressed && !block.isFlag) {
         //If we are still playing set block as pressed 
         block.isPressed = true;
         block.element.classList.add("pressed");
+        
         //if block is mine ,then we end the game with GAME_STATE[1] -> ("lose")
         if(block.isMine) {
             block.element.textContent = "💣";
             block.element.classList.add("mine");
             currentState = GAME_STATES[1];
-        } 
-        //if block is not mine we check if we clicked on 0 and if its and island
-        else {
+        } else { //if block is not mine we check if we clicked on 0 and if its and island
             let islandBlocks = checkForIsland(block.id);
-
-            blocksRemaining = blocksRemaining - islandBlocks.length;
-            if(blocksRemaining === 0) currentState = GAME_STATES[2]
-            // if the island is made out of more than 1 block 
-            // if its just 1 block we just set a number and press the block otherwise we select whole island and remove 0s
-
-            if(islandBlocks.length > 1) {
-                board.forEach(row => {
-                    row.forEach(block => {
-                        if(islandBlocks.includes(block.id)) {
-                            block.element.classList.add("pressed");
-                            let neighbours = getNeighbours(block.id);
-                            let mineCount = getMineCount(neighbours);
-                            if(mineCount === 0) {
-                                block.element.textContent = "";
-                                block.element.classList.add("zero");
-                            } else {
-                                block.element.textContent = mineCount;
-                            }
-                            block.isPressed = true;
+            board.forEach(row => {
+                row.forEach(block => {
+                    if(islandBlocks.includes(block.id)) {
+                        block.element.classList.add("pressed");
+                        let neighbours = getNeighbours(block.id);
+                        let mineCount = getMineCount(neighbours);
+                        if(mineCount === 0) {
+                            block.element.textContent = "";
+                            block.element.classList.add("zero");
+                        } else {
+                            block.element.textContent = mineCount;
                         }
-                    })
+                        block.isPressed = true;
+                    }
                 })
-            } else {
-                let neighbours = getNeighbours(block.id);
-                let mineCount = getMineCount(neighbours);
-                block.element.classList.add("pressed");
-                block.element.textContent = mineCount;
-            }
-            
+            })
         }
     }
 }
@@ -234,8 +216,7 @@ function handleBlockRightClick(event,block) {
                     block.element.classList.add("flagged");
                     block.element.textContent = "🚩";
                     flagsRemaining--;
-                } 
-                //if we have 0 flags or more flags and block is already flag we remove it
+                } //if we have 0 flags or more flags and block is already flag we remove it
                 else if((flagsRemaining === 0 && block.isFlag) || (flagsRemaining > 0 && block.isFlag)) {
                     block.isFlag = false;
                     block.element.classList.remove("flagged");
@@ -247,45 +228,52 @@ function handleBlockRightClick(event,block) {
     }
 }
 
+//Handle the select event
 function handleSelectChange(event) {
 
-    const existingBoard = document.querySelector(".board");
-
+    //We extract the data from option value and setup the settings
     const [rows,columns,mines] = event.target.value.split("x");
     settings.rows = Number(rows);
     settings.columns = Number(columns);
     settings.mines = Number(mines);
+    
+    //If the board already exit , we reset the board && other variables;
+    const existingBoard = document.querySelector(".board");
+    if(existingBoard) existingBoard.remove();
 
-    if(existingBoard) {
-        board = [];
-        currentState = GAME_STATES[0];
-        isFirstClick = true;
-        existingBoard.remove();
-    };
-
-    currentState = GAME_STATES[0];
-    blocksRemaining = (settings.rows * settings.columns) - settings.mines;
+    resetAllVariables();
     flagsRemaining = settings.mines;
 
+    //And after all the resets we create the board and make it playable
     createBoard();
     createBoardUI();
 }
 
+//Handle the reset btn
 function handleResetClick(event) {
+    //If the board already exit , we reset the board && other variables;
     const existingBoard = document.querySelector(".board");
     if(existingBoard) {
-        currentState = GAME_STATES[0];
-        isFirstClick = true;
-        board = [];
+        resetAllVariables();
         existingBoard.remove()
 
+        //And after all the resets we create the board and make it playable
         createBoard();
         createBoardUI();
     };
 }
 
-//DEBUG FNs
-function debug() {
+function resetAllVariables() {
+    currentState = GAME_STATES[0];
+    board = [];
+    isFirstClick = true;
+}
+
+export function randomNum(min,max) {
+    return Math.floor(Math.random() * (max+1 - min) + min);
+}
+
+export function debug(board) {
     board.forEach(row => {
         row.forEach(block => {
             //Show all mines & block IDs
@@ -298,5 +286,3 @@ function debug() {
         })
     })
 }
-
-

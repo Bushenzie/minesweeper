@@ -1,9 +1,11 @@
 # Minesweeper
 
-- Minesweeper built using only HTML,CSS and Vanilla JS /w no libraries or packages
+- Minesweeper built using only HTML,SCSS and Vanilla JS **without** libraries or packages
 
 ### TODOs
 
-- Refactor some of code
-- Test it
-- Make so player always starts on Island
+- Refactor
+  - Better handle Game states
+  - File Strucure
+  - Code Strucure
+- Win based on how many blocks are remaining
