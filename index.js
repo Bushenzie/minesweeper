@@ -2,6 +2,7 @@
 //TODO Overall refactor ,but hey it works :)
 //TODO Fully test neigbours functionality -> calculating row/column was really funky
 //TODO Always start on island!
+//TODO Sometimes it switches into other GAME_STATE (maybe) and the Game is not playable until reset
 
 
 //DOM
