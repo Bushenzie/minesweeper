@@ -10,3 +10,4 @@
   - File Strucure
   - Code Strucure
 - Win based on how many blocks are remaining
+- Responsivity
