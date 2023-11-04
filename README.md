@@ -1,6 +1,7 @@
 # Minesweeper
 
 - Minesweeper built using only HTML,SCSS and Vanilla JS **without** libraries or packages
+- [Preview](https://bushenzie.github.io/minesweeper/)
 
 ### TODOs
 
