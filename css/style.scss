@@ -1,0 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700;800&display=swap');
+
+$flag-color: #F19953;
+$bomb-color: #C81939;
+$primary-color: #E53855;
+$light-primary-color: #EC6F84;
+$secondary-color: #4A0462;
+$text-color: #FCFAF9;
+
+* {
+    font-family: "Open Sans",sans-serif
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+
+    .setup {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 1vw;
+
+        h1 {
+            margin:0;
+            padding: 0;
+        }
+    }
+
+    .board {
+        display: grid;
+        align-items: stretch;
+        margin: 1vw;
+
+        .block {
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: .5px solid #EA526F;
+            transition: .05s all;
+            background-color: $secondary-color;
+            color: $text-color;
+
+            &:hover {
+                background-color: $primary-color;
+            }
+
+            &.pressed {
+                background-color: $primary-color;
+                color: white;
+
+                &.zero {
+                    background-color: $light-primary-color;
+                    border: none;
+                }
+
+                &.mine {
+                    background-color: $bomb-color;
+                }
+            }
+
+            &.flagged {
+                background-color: $flag-color;
+            }
+        }
+    }
+}
+
+
